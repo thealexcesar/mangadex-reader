@@ -1,0 +1,19 @@
+{
+  "search_placeholder": "Search manga...",
+  "search_button": "Search",
+  "popular_title": "Popular",
+  "results_title": "Results",
+  "back_button": "← Back",
+  "chapters_button": "← Chapters",
+  "previous_button": "Previous",
+  "next_button": "Next",
+  "mode_page": "Mode: Page",
+  "mode_scroll": "Mode: Scroll",
+  "loading": "Loading...",
+  "error_loading": "Error loading",
+  "no_title": "No title",
+  "chapters_title": "Chapters",
+  "loading_chapters": "Loading chapters...",
+  "chapter": "Chapter",
+  "page_of": "{{current}} / {{total}}"
+}

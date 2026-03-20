@@ -1,0 +1,19 @@
+{
+  "search_placeholder": "Buscar mangá...",
+  "search_button": "Buscar",
+  "popular_title": "Populares",
+  "results_title": "Resultados",
+  "back_button": "← Voltar",
+  "chapters_button": "← Capítulos",
+  "previous_button": "Anterior",
+  "next_button": "Próxima",
+  "mode_page": "Modo: Página",
+  "mode_scroll": "Modo: Scroll",
+  "loading": "Carregando...",
+  "error_loading": "Erro ao carregar",
+  "no_title": "Sem título",
+  "chapters_title": "Capítulos",
+  "loading_chapters": "Carregando capítulos...",
+  "chapter": "Capítulo",
+  "page_of": "{{current}} / {{total}}"
+}

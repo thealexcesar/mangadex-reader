@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Manga Reader</title>
+  <link rel="stylesheet" href="assets/css/global.css">
+</head>
+<body>
+<div id="header" class="header">
+  <div class="container">
+    <div class="header-content">
+      <div class="search-box">
+        <input type="text" id="searchInput" data-i18n-placeholder="search_placeholder">
+        <button onclick="searchManga()" data-i18n="search_button"></button>
+      </div>
+      <select id="langSelector" class="lang-selector" onchange="changeLanguage(this.value)">
+        <option value="en">English</option>
+        <option value="pt-br">Português</option>
+      </select>
+    </div>
+  </div>
+</div>
+
+<div id="homeView" class="container">
+  <div id="searchResultsSection" class="hidden">
+    <div class="section-title" data-i18n="results_title"></div>
+    <div id="searchResults" class="manga-grid"></div>
+  </div>
+
+  <div class="section-title" data-i18n="popular_title"></div>
+  <div id="popularGrid" class="manga-grid">
+    <div class="loading" data-i18n="loading"></div>
+  </div>
+</div>
+
+<div id="chaptersView" class="hidden">
+  <div class="container chapters-view">
+    <button class="back-btn" onclick="backToHome()" data-i18n="back_button"></button>
+    <div id="mangaTitle" class="section-title"></div>
+    <div id="chaptersList" class="chapter-list"></div>
+  </div>
+</div>
+
+<div id="readerView" class="hidden">
+  <div class="reader-view">
+    <div id="pageContainer"></div>
+  </div>
+</div>
+
+<div id="readerControls" class="controls hidden">
+  <button id="backToChaptersBtn" onclick="backToChapters()" data-i18n="chapters_button"></button>
+  <button id="modeToggle" class="mode-toggle" onclick="toggleMode()"></button>
+  <button id="prevBtn" onclick="prevPage()" data-i18n="previous_button"></button>
+  <span id="pageInfo" class="page-info"></span>
+  <button id="nextBtn" onclick="nextPage()" data-i18n="next_button"></button>
+</div>
+
+<script>
+  let currentManga = null;
+  let currentChapter = null;
+  let currentPages = [];
+  let currentPageIndex = 0;
+  let scrollMode = localStorage.getItem('scrollMode') === 'true' || false;
+  let currentLang = localStorage.getItem('language') || 'en';
+  let translations = {};
+
+  const langMap = {
+    'en': 'en',
+    'pt-br': 'pt-br'
+  };
+
+  async function loadTranslations(lang) {
+    try {
+      const res = await fetch(`/locales/${lang}.json`);
+      translations = await res.json();
+      applyTranslations();
+    } catch (e) {
+      console.error('Error loading translations:', e);
+    }
+  }
+
+  function t(key, params = {}) {
+    let text = translations[key] || key;
+    Object.keys(params).forEach(param => {
+      text = text.replace(`{{${param}}}`, params[param]);
+    });
+    return text;
+  }
+
+  function applyTranslations() {
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      el.textContent = t(el.getAttribute('data-i18n'));
+    });
+
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      el.placeholder = t(el.getAttribute('data-i18n-placeholder'));
+    });
+
+    updateModeButton();
+  }
+
+  function changeLanguage(lang) {
+    currentLang = lang;
+    localStorage.setItem('language', lang);
+    loadTranslations(lang);
+  }
+
+  function updateModeButton() {
+    const btn = document.getElementById('modeToggle');
+    btn.textContent = scrollMode ? t('mode_scroll') : t('mode_page');
+  }
+
+  function toggleMode() {
+    scrollMode = !scrollMode;
+    localStorage.setItem('scrollMode', scrollMode);
+    updateModeButton();
+    showPage();
+  }
+
+  async function loadPopular() {
+    try {
+      const res = await fetch(`/popular?lang=${currentLang}`);
+      const data = await res.json();
+      displayMangaGrid(data.data, 'popularGrid');
+    } catch (e) {
+      document.getElementById('popularGrid').innerHTML = `<div class="loading">${t('error_loading')}</div>`;
+    }
+  }
+
+  async function searchManga() {
+    const query = document.getElementById('searchInput').value;
+    if (!query) return;
+
+    const res = await fetch(`/search?q=${query}&lang=${currentLang}`);
+    const data = await res.json();
+
+    document.getElementById('searchResultsSection').classList.remove('hidden');
+    displayMangaGrid(data.data, 'searchResults');
+  }
+
+  function displayMangaGrid(mangas, containerId) {
+    const container = document.getElementById(containerId);
+    container.innerHTML = '';
+
+    mangas.forEach(manga => {
+      const card = document.createElement('div');
+      card.className = 'manga-card';
+      card.onclick = () => loadChapters(manga);
+
+      const cover = manga.relationships.find(r => r.type === 'cover_art');
+      const coverUrl = cover ?
+        `https://uploads.mangadex.org/covers/${manga.id}/${cover.attributes.fileName}` : '';
+
+      const title = manga.attributes.title.en || manga.attributes.title['ja-ro'] || t('no_title');
+
+      card.innerHTML = `
+        <img class="manga-cover" src="${coverUrl}" alt="${title}">
+        <div class="manga-title">${title}</div>
+      `;
+
+      container.appendChild(card);
+    });
+  }
+
+  async function loadChapters(manga) {
+    currentManga = manga;
+
+    document.getElementById('homeView').classList.add('hidden');
+    document.getElementById('chaptersView').classList.remove('hidden');
+
+    const title = manga.attributes.title.en || manga.attributes.title['ja-ro'] || t('chapters_title');
+    document.getElementById('mangaTitle').textContent = title;
+
+    const chaptersList = document.getElementById('chaptersList');
+    chaptersList.innerHTML = `<div class="loading">${t('loading_chapters')}</div>`;
+
+    let allChapters = [];
+    let offset = 0;
+    const limit = 100;
+
+    while (true) {
+      const res = await fetch(`/chapters/${manga.id}?offset=${offset}&lang=${currentLang}`);
+      const data = await res.json();
+
+      if (data.data.length === 0) break;
+
+      allChapters = allChapters.concat(data.data);
+      offset += limit;
+
+      if (data.data.length < limit) break;
+    }
+
+    chaptersList.innerHTML = '';
+
+    allChapters.forEach(chapter => {
+      const item = document.createElement('div');
+      item.className = 'chapter-item';
+      item.onclick = () => loadPages(chapter);
+
+      const chNum = chapter.attributes.chapter || '?';
+      const title = chapter.attributes.title || '';
+      item.textContent = `${t('chapter')} ${chNum}${title ? ' - ' + title : ''}`;
+
+      chaptersList.appendChild(item);
+    });
+  }
+
+  async function loadPages(chapter) {
+    currentChapter = chapter;
+    currentPageIndex = 0;
+
+    localStorage.setItem('readingState', JSON.stringify({
+      manga: currentManga,
+      chapter: chapter,
+      page: 0
+    }));
+
+    document.getElementById('chaptersView').classList.add('hidden');
+    document.getElementById('readerView').classList.remove('hidden');
+    document.getElementById('header').classList.add('hidden');
+    document.getElementById('readerControls').classList.remove('hidden');
+
+    updateModeButton();
+
+    const res = await fetch(`/pages/${chapter.id}`);
+    const data = await res.json();
+
+    currentPages = data.chapter.data.map(page =>
+      `${data.baseUrl}/data/${data.chapter.hash}/${page}`
+    );
+
+    showPage();
+  }
+
+  function showPage() {
+    const container = document.getElementById('pageContainer');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const pageInfo = document.getElementById('pageInfo');
+
+    if (scrollMode) {
+      container.innerHTML = currentPages.map(page =>
+        `<img class="reader-page" src="${page}">`
+      ).join('');
+
+      prevBtn.classList.add('hidden');
+      nextBtn.classList.add('hidden');
+      pageInfo.classList.add('hidden');
+    } else {
+      container.innerHTML = `<img class="reader-page" src="${currentPages[currentPageIndex]}">`;
+
+      prevBtn.classList.remove('hidden');
+      nextBtn.classList.remove('hidden');
+      pageInfo.classList.remove('hidden');
+
+      pageInfo.textContent = t('page_of', {
+        current: currentPageIndex + 1,
+        total: currentPages.length
+      });
+
+      prevBtn.disabled = currentPageIndex === 0;
+      nextBtn.disabled = currentPageIndex === currentPages.length - 1;
+    }
+
+    const state = JSON.parse(localStorage.getItem('readingState') || '{}');
+    if (state.manga && state.chapter) {
+      state.page = currentPageIndex;
+      localStorage.setItem('readingState', JSON.stringify(state));
+    }
+  }
+
+  function prevPage() {
+    if (currentPageIndex > 0) {
+      currentPageIndex--;
+      showPage();
+      window.scrollTo(0, 0);
+    }
+  }
+
+  function nextPage() {
+    if (currentPageIndex < currentPages.length - 1) {
+      currentPageIndex++;
+      showPage();
+      window.scrollTo(0, 0);
+    }
+  }
+
+  function backToHome() {
+    localStorage.removeItem('readingState');
+    document.getElementById('chaptersView').classList.add('hidden');
+    document.getElementById('homeView').classList.remove('hidden');
+    document.getElementById('searchResultsSection').classList.add('hidden');
+  }
+
+  function backToChapters() {
+    document.getElementById('readerView').classList.add('hidden');
+    document.getElementById('readerControls').classList.add('hidden');
+    document.getElementById('header').classList.remove('hidden');
+    document.getElementById('chaptersView').classList.remove('hidden');
+  }
+
+  async function restoreState() {
+    await loadTranslations(currentLang);
+    document.getElementById('langSelector').value = currentLang;
+
+    const state = JSON.parse(localStorage.getItem('readingState') || '{}');
+
+    if (state.manga && state.chapter) {
+      currentManga = state.manga;
+      currentChapter = state.chapter;
+      currentPageIndex = state.page || 0;
+
+      document.getElementById('homeView').classList.add('hidden');
+      document.getElementById('readerView').classList.remove('hidden');
+      document.getElementById('header').classList.add('hidden');
+      document.getElementById('readerControls').classList.remove('hidden');
+
+      updateModeButton();
+
+      const res = await fetch(`/pages/${currentChapter.id}`);
+      const data = await res.json();
+
+      currentPages = data.chapter.data.map(page =>
+        `${data.baseUrl}/data/${data.chapter.hash}/${page}`
+      );
+
+      showPage();
+    } else {
+      loadPopular();
+    }
+  }
+
+  document.getElementById('searchInput').addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') searchManga();
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (document.getElementById('readerView').classList.contains('hidden')) return;
+    if (scrollMode) return;
+    if (e.key === 'ArrowLeft') prevPage();
+    if (e.key === 'ArrowRight') nextPage();
+  });
+
+  restoreState();
+</script>
+</body>
+</html>
