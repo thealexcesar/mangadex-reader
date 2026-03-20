@@ -308,7 +308,7 @@ async function loadPages(chapter) {
     const data = await response.json();
 
     state.currentPages = data.chapter.data.map(
-      (page) => `${data.baseUrl}/data/${data.chapter.hash}/${page}`
+      (page) => `/image-proxy?url=${encodeURIComponent(`${data.baseUrl}/data/${data.chapter.hash}/${page}`)}`
     );
 
     showPage();
