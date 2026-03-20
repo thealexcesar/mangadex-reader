@@ -2,59 +2,123 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Manga Reader</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+  <!-- SEO -->
+  <title>Manga Reader — Free MangaDex Browser</title>
+  <meta name="description" content="Read manga online for free. Browse thousands of titles from MangaDex with a clean, fast, mobile-friendly reader.">
+  <meta name="keywords" content="manga reader, mangadex, read manga online, free manga">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://yourdomain.com/">
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Manga Reader — Free MangaDex Browser">
+  <meta property="og:description" content="Read manga online for free. Browse thousands of titles with a clean, fast reader.">
+  <meta property="og:image" content="https://yourdomain.com/og-image.jpg">
+  <meta property="og:url" content="https://yourdomain.com/">
+  <meta property="og:site_name" content="Manga Reader">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Manga Reader — Free MangaDex Browser">
+  <meta name="twitter:description" content="Read manga online for free. Browse thousands of titles with a clean, fast reader.">
+  <meta name="twitter:image" content="https://yourdomain.com/og-image.jpg">
+
+  <!-- PWA / Theme -->
+  <meta name="theme-color" content="#09090b">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
   <link rel="stylesheet" href="assets/styles/global.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
   <script src="/assets/javascript/main.js"></script>
 </head>
 <body>
+
+<!-- HEADER ----------------------------------------------------->
 <div id="header" class="header">
   <div class="container">
     <div class="header-content">
-      <div class="search-box">
-        <input type="text" id="searchInput" data-i18n-placeholder="search_placeholder">
-        <button onclick="searchManga()" data-i18n="search_button"></button>
+      <a class="brand" href="/" onclick="backToHome(); return false;">
+        <span class="material-icons-round brand-icon">menu_book</span>
+        <span class="brand-name">Manga</span>
+      </a>
+      <div class="search-box" id="searchBox">
+        <input type="text" id="searchInput" data-i18n-placeholder="search_placeholder" autocomplete="off" spellcheck="false">
+        <button class="search-clear-btn hidden" id="searchClear" onclick="clearSearch()" aria-label="Clear">
+          <span class="material-icons-round">close</span>
+        </button>
+        <button class="search-icon-btn" onclick="searchManga()" aria-label="Search">
+          <span class="material-icons-round">search</span>
+        </button>
       </div>
       <select id="langSelector" class="lang-selector" onchange="changeLanguage(this.value)">
-        <option value="en">English</option>
-        <option value="pt-br">Português</option>
+        <option value="en">EN</option>
+        <option value="pt-br">PT</option>
       </select>
     </div>
   </div>
 </div>
 
+<!-- HOME ------------------------------------------------------->
 <div id="homeView" class="container">
   <div id="searchResultsSection" class="hidden">
     <div class="section-title" data-i18n="results_title"></div>
     <div id="searchResults" class="manga-grid"></div>
   </div>
-
   <div class="section-title" data-i18n="popular_title"></div>
   <div id="popularGrid" class="manga-grid">
-    <div class="loading" data-i18n="loading"></div>
+    <div class="spinner-wrap"><div class="spinner"></div></div>
   </div>
 </div>
 
+<!-- CHAPTERS --------------------------------------------------->
 <div id="chaptersView" class="hidden">
   <div class="container chapters-view">
-    <button class="back-btn" onclick="backToHome()" data-i18n="back_button"></button>
+    <button class="back-btn" onclick="backToHome()">
+      <span class="material-icons-round">arrow_back</span>
+      <span data-i18n="back_button"></span>
+    </button>
     <div id="mangaTitle" class="section-title"></div>
-    <div id="chaptersList" class="chapter-list"></div>
+    <div id="chaptersList" class="chapter-list">
+      <div class="spinner-wrap"><div class="spinner"></div></div>
+    </div>
   </div>
 </div>
 
+<!-- READER ----------------------------------------------------->
 <div id="readerView" class="hidden">
-  <div class="reader-view">
+  <div class="reader-view" id="readerViewInner">
     <div id="pageContainer"></div>
   </div>
 </div>
 
+<!-- READER CONTROLS -------------------------------------------->
 <div id="readerControls" class="controls hidden">
-  <button id="backToChaptersBtn" onclick="backToChapters()" data-i18n="chapters_button"></button>
-  <button id="modeToggle" class="mode-toggle" onclick="toggleMode()"></button>
-  <button id="prevBtn" onclick="prevPage()" data-i18n="previous_button"></button>
-  <span id="pageInfo" class="page-info"></span>
-  <button id="nextBtn" onclick="nextPage()" data-i18n="next_button"></button>
+  <div class="controls-left">
+    <button class="icon-btn" id="backToChaptersBtn" onclick="backToChapters()" title="Back to chapters">
+      <span class="material-icons-round">arrow_back</span>
+    </button>
+    <button class="icon-btn mode-toggle" id="modeToggle" onclick="toggleMode()">
+      <span class="material-icons-round" id="modeIcon">swap_vert</span>
+    </button>
+  </div>
+
+  <div class="controls-center">
+    <button class="icon-btn" id="prevBtn" onclick="prevPage()">
+      <span class="material-icons-round">chevron_left</span>
+    </button>
+    <span id="pageInfo" class="page-info"></span>
+    <button class="icon-btn" id="nextBtn" onclick="nextPage()">
+      <span class="material-icons-round">chevron_right</span>
+    </button>
+  </div>
+
+  <div class="controls-right"></div>
 </div>
+
 </body>
 </html>
