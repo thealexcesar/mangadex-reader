@@ -191,7 +191,7 @@ function displayMangaGrid(mangas, containerId) {
 
     const cover = manga.relationships?.find((r) => r.type === 'cover_art');
     const coverUrl = cover
-      ? `https://uploads.mangadex.org/covers/${manga.id}/${cover.attributes.fileName}`
+      ? `/image-proxy?url=${encodeURIComponent(`https://uploads.mangadex.org/covers/${manga.id}/${cover.attributes.fileName}`)}`
       : '';
 
     const title =
