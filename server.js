@@ -34,14 +34,24 @@ async function login() {
 }
 
 app.get("/popular", async (req, res) => {
-  if (!token) await login();
-  const r = await fetch(
-    `https://api.mangadex.org/manga?limit=24&includes[]=cover_art&order[followedCount]=desc&contentRating[]=safe&contentRating[]=suggestive`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
+  try {
+    if (!token) await login();
+    const r = await fetch(
+      `https://api.mangadex.org/manga?limit=24&includes[]=cover_art&order[followedCount]=desc&contentRating[]=safe&contentRating[]=suggestive`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    const data = await r.json();
+    if (!r.ok) {
+      token = null;
+      return res.status(r.status).json(data);
     }
-  );
-  res.json(await r.json());
+    res.json(data);
+  } catch (e) {
+    token = null;
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.get("/search", async (req, res) => {
