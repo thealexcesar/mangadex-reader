@@ -7,7 +7,6 @@
 // ============================================================================
 
 const state = {
-  chapters: [],
   currentManga: null,
   currentChapter: null,
   currentPages: [],
@@ -210,10 +209,7 @@ function setupScrollHide() {
     if (readerHidden || !controls) return;
 
     const y = window.scrollY;
-    const atBottom = (window.innerHeight + y) >= document.body.scrollHeight - 80;
-    if (atBottom && state.scrollMode) {
-      controls.classList.remove('controls--hidden');
-    } else if (y > lastScrollY && y > 80) {
+    if (y > lastScrollY && y > 80) {
       controls.classList.add('controls--hidden');
     } else {
       controls.classList.remove('controls--hidden');
@@ -368,15 +364,10 @@ async function loadChapters(manga, skipNav = false) {
 
   try {
     const chapters = await fetchAllChapters(manga.id);
-    state.chapters = chapters;
     list.innerHTML = '';
     chapters.forEach((chapter) => {
       const item = document.createElement('div');
       item.className = 'chapter-item';
-      if (state.currentChapter?.id === chapter.id) {
-        item.classList.add('active');
-        setTimeout(() => item.scrollIntoView({ block: 'center', behavior: 'smooth' }), 100);
-      }
       item.onclick = () => loadPages(chapter);
       const num = chapter.attributes.chapter || '?';
       const ttl = chapter.attributes.title || '';
@@ -430,7 +421,6 @@ async function loadPages(chapter) {
       (p) => `/image-proxy?url=${encodeURIComponent(`${data.baseUrl}/data/${data.chapter.hash}/${p}`)}`
     );
     showPage();
-    updateNextChapterBtn();
   } catch (e) {
     console.error('Error loading pages:', e);
     document.getElementById('pageContainer').innerHTML =
@@ -490,7 +480,6 @@ function showPage(direction) {
     nextBtn.disabled = state.currentPageIndex === state.currentPages.length - 1;
   }
 
-  updateNextChapterBtn();
   // Save progress
   const rs = JSON.parse(localStorage.getItem('readingState') || '{}');
   if (rs.manga && rs.chapter) {
@@ -529,20 +518,6 @@ function nextPage() {
   if (state.currentPageIndex < state.currentPages.length - 1 && !state.flipping) {
     flipToPage(state.currentPageIndex + 1, 'next');
   }
-}
-
-function nextChapter() {
-  const idx = state.chapters.findIndex(c => c.id === state.currentChapter?.id);
-  if (idx === -1 || idx >= state.chapters.length - 1) return;
-  loadPages(state.chapters[idx + 1]);
-}
-
-function updateNextChapterBtn() {
-  const btn = document.getElementById('nextChapterBtn');
-  if (!btn) return;
-  const idx = state.chapters.findIndex(c => c.id === state.currentChapter?.id);
-  btn.disabled = idx === -1 || idx >= state.chapters.length - 1;
-  btn.title = t('next_chapter');
 }
 
 // ============================================================================
