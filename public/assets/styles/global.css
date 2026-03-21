@@ -398,6 +398,11 @@ select:not(:active),
     transition: all 0.2s;
 }
 
+#backToChaptersBtn {
+    background-color: var(--bg-surface);
+    color: var(--text-secondary);
+}
+
 .back-btn .material-icons-round {
     font-size: 18px;
     color: var(--primary);
@@ -639,6 +644,10 @@ select:not(:active),
 
 .controls-right {
     justify-content: flex-end;
+}
+
+.controls-right > button {
+    background: var(--bg-surface);
 }
 
 .controls-center {
