@@ -446,9 +446,13 @@ select:not(:active),
     padding-left: 1.5rem;
 }
 
-.chapter-item:hover::before {
-    opacity: 1;
+.chapter-item.active {
+    background: var(--primary-glow);
+    color: var(--text);
+    /*border-left: 2px solid var(--primary);*/
+    padding-left: 1.5rem;
 }
+.chapter-item.active::before { opacity: 1; }
 
 .chapter-item:last-child {
     border-bottom: none;
@@ -609,10 +613,9 @@ select:not(:active),
     bottom: 0;
     left: 0;
     right: 0;
-    background: rgba(9, 9, 11, 0.92);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid var(--border);
+    background: linear-gradient(to top, rgba(9,9,11,0.75) 0%, transparent 100%);
+    border-top: none;
+    /*border-top: 1px solid var(--border);*/
     padding: 0.5rem 1rem;
     padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
     display: flex;
