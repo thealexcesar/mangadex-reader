@@ -398,6 +398,11 @@ select:not(:active),
     transition: all 0.2s;
 }
 
+#backToChaptersBtn {
+    background-color: var(--bg-surface);
+    color: var(--text-secondary);
+}
+
 .back-btn .material-icons-round {
     font-size: 18px;
     color: var(--primary);
@@ -615,7 +620,7 @@ select:not(:active),
     right: 0;
     background: linear-gradient(to top, rgba(9,9,11,0.75) 0%, transparent 100%);
     border-top: none;
-    /*border-top: 1px solid var(--border);*/
+    border-top: 1px solid var(--border);
     padding: 0.5rem 1rem;
     padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
     display: flex;
@@ -639,6 +644,10 @@ select:not(:active),
 
 .controls-right {
     justify-content: flex-end;
+}
+
+.controls-right > button {
+    background: var(--bg-surface);
 }
 
 .controls-center {
