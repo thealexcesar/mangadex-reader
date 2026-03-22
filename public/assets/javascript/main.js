@@ -30,18 +30,7 @@ const CHAPTERS_LIMIT = 100;
 // ============================================================================
 // SVG PLACEHOLDER (manga-themed panels)
 // ============================================================================
-
-const MANGA_PLACEHOLDER_SVG = `
-<svg class="placeholder-svg" width="64" height="80" viewBox="0 0 64 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <rect x="2" y="2" width="60" height="76" rx="4" stroke="currentColor" stroke-width="1.5" opacity="0.25"/>
-  <line x1="2" y1="38" x2="62" y2="38" stroke="currentColor" stroke-width="1" opacity="0.18"/>
-  <line x1="32" y1="2" x2="32" y2="38" stroke="currentColor" stroke-width="1" opacity="0.18"/>
-  <rect x="10" y="10" width="14" height="10" rx="2" stroke="currentColor" stroke-width="1" opacity="0.15"/>
-  <rect x="40" y="12" width="12" height="6" rx="1.5" stroke="currentColor" stroke-width="1" opacity="0.15"/>
-  <circle cx="32" cy="58" r="8" stroke="currentColor" stroke-width="1" opacity="0.15"/>
-  <path d="M29 56 L32 52 L35 56" stroke="currentColor" stroke-width="1" opacity="0.12" stroke-linecap="round" stroke-linejoin="round"/>
-  <line x1="32" y1="52" x2="32" y2="63" stroke="currentColor" stroke-width="1" opacity="0.12" stroke-linecap="round"/>
-</svg>`;
+const MANGA_PLACEHOLDER_SVG = `<img class="placeholder-svg" src="/assets/image/placeholder.svg" alt="">`;
 
 // ============================================================================
 // TRANSLATIONS
@@ -587,11 +576,16 @@ async function restoreState() {
     updateModeButton();
 
     try {
-      const res  = await fetch(`/pages/${state.currentChapter.id}`);
-      const data = await res.json();
-      state.currentPages = data.chapter.data.map(
-        (p) => `/image-proxy?url=${encodeURIComponent(`${data.baseUrl}/data/${data.chapter.hash}/${p}`)}`
+      const [pagesData, chapters] = await Promise.all([
+        fetch(`/pages/${state.currentChapter.id}`).then(r => r.json()),
+        fetchAllChapters(rs.manga.id),
+      ]);
+
+      state.chapters     = chapters;
+      state.currentPages = pagesData.chapter.data.map(
+        (p) => `/image-proxy?url=${encodeURIComponent(`${pagesData.baseUrl}/data/${pagesData.chapter.hash}/${p}`)}`
       );
+
       showPage();
       history.replaceState({ view: 'reader' }, '', location.pathname);
     } catch (e) {
