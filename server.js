@@ -9,12 +9,30 @@ const PROXY_URL = "https://api.allorigins.win/raw?url=";
 async function proxyFetch(url, options = {}) {
   const proxyUrl = PROXY_URL + encodeURIComponent(url);
 
-  return fetch(proxyUrl, {
+  const res = await fetch(proxyUrl, {
     ...options,
     headers: {
       ...options.headers,
       "User-Agent": USER_AGENT,
     },
+  });
+
+  if (!res.ok) return res;
+
+  const data = await res.json();
+
+  if (data.result === "ok" && data.response) {
+    const mockRes = new Response(JSON.stringify(data.response), {
+      status: res.status,
+      headers: res.headers,
+    });
+    mockRes.ok = res.ok;
+    return mockRes;
+  }
+
+  return new Response(JSON.stringify(data), {
+    status: res.status,
+    headers: res.headers,
   });
 }
 
