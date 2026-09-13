@@ -6,7 +6,7 @@ A minimalist web application for reading manga from the MangaDex API with suppor
 # Mangadex Reader
 
 A minimalist web application for reading manga from the MangaDex API with support for multiple languages.
-**[🌐 Live Demo](https://mangadex-reader.onrender.com)** • **[📱 Mobile Friendly](#interface)** • **[🌍 Multilingual](#languages)**
+**[🌐 Live Demo](https://manga.facil.cc)** • **[📱 Mobile Friendly](#interface)** • **[🌍 Multilingual](#languages)**
 
 ---
 
@@ -35,7 +35,7 @@ A minimalist web application for reading manga from the MangaDex API with suppor
 ## 🎯 How to Use
 
 ### Online (Recommended)
-Visit: **https://mangadex-reader.onrender.com**
+Visit: **https://manga.facil.cc**
 
 ### Local
 
@@ -244,7 +244,7 @@ git push origin feature/your-feature
 ## 🎯 How to Use
 
 ### Online (Recommended)
-Visit: **https://mangadex-reader.onrender.com**
+Visit: **https://manga.facil.cc**
 
 ### Local
 

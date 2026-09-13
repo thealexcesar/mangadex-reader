@@ -26,6 +26,28 @@ const SWIPE_THRESHOLD = 50;
 const FLIP_EXIT_MS = 350;
 const PLACEHOLDER_DELAY_MS = 3000;
 const CHAPTERS_LIMIT = 100;
+const TOAST_DURATION_MS = 4000;
+
+// ============================================================================
+// TOAST
+// ============================================================================
+
+function showToast(message) {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.innerHTML = `<span class="material-icons-round">error_outline</span><span>${message}</span>`;
+  container.appendChild(toast);
+
+  requestAnimationFrame(() => toast.classList.add('show'));
+
+  setTimeout(() => {
+    toast.classList.remove('show');
+    setTimeout(() => toast.remove(), 250);
+  }, TOAST_DURATION_MS);
+}
 
 // ============================================================================
 // SVG PLACEHOLDER (manga-themed panels)
@@ -262,13 +284,16 @@ async function loadPopular() {
   try {
     const res  = await fetch(`/popular?lang=${state.currentLang}`);
     const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
     if (!data.data?.length) {
       grid.innerHTML = generateEmptyCards(12);
       return;
     }
     displayMangaGrid(data.data, 'popularGrid');
   } catch (e) {
+    console.error('Error loading popular:', e);
     grid.innerHTML = generateEmptyCards(12);
+    showToast(t('error_loading'));
   }
 }
 
@@ -293,9 +318,12 @@ async function searchManga() {
   try {
     const res  = await fetch(`/search?q=${encodeURIComponent(query)}&lang=${state.currentLang}`);
     const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
     displayMangaGrid(data.data, 'searchResults');
   } catch (e) {
+    console.error('Error searching manga:', e);
     results.innerHTML = `<div class="loading">${t('error_loading')}</div>`;
+    showToast(t('error_loading'));
   }
 }
 
@@ -375,6 +403,7 @@ async function loadChapters(manga, skipNav = false) {
   } catch (e) {
     console.error('Error loading chapters:', e);
     list.innerHTML = `<div class="loading">${t('error_loading')}</div>`;
+    showToast(t('error_loading'));
   }
 }
 
@@ -384,6 +413,7 @@ async function fetchAllChapters(mangaId) {
   while (true) {
     const res  = await fetch(`/chapters/${mangaId}?offset=${offset}&lang=${state.currentLang}`);
     const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
     if (!data.data?.length) break;
     all.push(...data.data);
     offset += CHAPTERS_LIMIT;
@@ -415,6 +445,7 @@ async function loadPages(chapter) {
   try {
     const res  = await fetch(`/pages/${chapter.id}`);
     const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
     state.currentPages = data.chapter.data.map(
       (p) => `/image-proxy?url=${encodeURIComponent(`${data.baseUrl}/data/${data.chapter.hash}/${p}`)}`
     );
@@ -424,6 +455,7 @@ async function loadPages(chapter) {
     console.error('Error loading pages:', e);
     document.getElementById('pageContainer').innerHTML =
       `<div class="page-error"><span class="material-icons-round">broken_image</span>${t('error_loading')}</div>`;
+    showToast(t('error_loading'));
   }
 }
 

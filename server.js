@@ -26,6 +26,7 @@ async function login() {
   const data = await res.json();
 
   if (!data.access_token) {
+    console.error("Login failed, MangaDex response:", data);
     throw new Error("Authentication failed");
   }
 
@@ -49,34 +50,47 @@ app.get("/popular", async (req, res) => {
     }
     res.json(data);
   } catch (e) {
+    console.error("Error on /popular:", e.cause || e);
     token = null;
     res.status(500).json({ error: e.message });
   }
 });
 
 app.get("/search", async (req, res) => {
-  if (!token) await login();
-  const q = req.query.q;
-  const r = await fetch(`https://api.mangadex.org/manga?title=${q}&limit=20&includes[]=cover_art`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  res.json(await r.json());
+  try {
+    if (!token) await login();
+    const q = req.query.q;
+    const r = await fetch(`https://api.mangadex.org/manga?title=${q}&limit=20&includes[]=cover_art`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    res.json(await r.json());
+  } catch (e) {
+    console.error("Error on /search:", e.cause || e);
+    token = null;
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.get("/chapters/:mangaId", async (req, res) => {
-  if (!token) await login();
-  const offset = req.query.offset || 0;
-  const lang = req.query.lang || 'en';
+  try {
+    if (!token) await login();
+    const offset = req.query.offset || 0;
+    const lang = req.query.lang || 'pt-br';
 
-  const translatedLang = lang === 'pt-br' ? 'pt-br' : 'en';
+    const translatedLang = lang === 'en' ? 'en' : 'pt-br';
 
-  const r = await fetch(
-    `https://api.mangadex.org/manga/${req.params.mangaId}/feed?translatedLanguage[]=${translatedLang}&order[chapter]=asc&limit=100&offset=${offset}`,
-    {
-      headers: { Authorization: `Bearer ${token}` },
-    }
-  );
-  res.json(await r.json());
+    const r = await fetch(
+      `https://api.mangadex.org/manga/${req.params.mangaId}/feed?translatedLanguage[]=${translatedLang}&order[chapter]=asc&limit=100&offset=${offset}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+    res.json(await r.json());
+  } catch (e) {
+    console.error("Error on /chapters:", e.cause || e);
+    token = null;
+    res.status(500).json({ error: e.message });
+  }
 });
 
 app.get("/pages/:chapterId", async (req, res) => {
