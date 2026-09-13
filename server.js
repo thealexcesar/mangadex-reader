@@ -4,8 +4,9 @@ const app = express();
 let token = null;
 
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
+const LOGIN_RETRIES = 3;
 
-async function login() {
+async function loginOnce() {
   const body = new URLSearchParams({
     grant_type: "password",
     username: process.env.MANGADEX_USER,
@@ -21,6 +22,7 @@ async function login() {
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
         "User-Agent": USER_AGENT,
+        "Connection": "close",
       },
       body: body,
     },
@@ -37,13 +39,27 @@ async function login() {
   console.log("✓ Token OK");
 }
 
+async function login() {
+  let lastError;
+  for (let attempt = 1; attempt <= LOGIN_RETRIES; attempt++) {
+    try {
+      await loginOnce();
+      return;
+    } catch (e) {
+      lastError = e;
+      console.error(`Login attempt ${attempt}/${LOGIN_RETRIES} failed:`, e.message);
+    }
+  }
+  throw lastError;
+}
+
 app.get("/popular", async (req, res) => {
   try {
     if (!token) await login();
     const r = await fetch(
       `https://api.mangadex.org/manga?limit=24&includes[]=cover_art&order[followedCount]=desc&contentRating[]=safe&contentRating[]=suggestive`,
       {
-        headers: { Authorization: `Bearer ${token}`, "User-Agent": USER_AGENT },
+        headers: { Authorization: `Bearer ${token}`, "User-Agent": USER_AGENT, "Connection": "close" },
       }
     );
     const data = await r.json();
@@ -64,7 +80,7 @@ app.get("/search", async (req, res) => {
     if (!token) await login();
     const q = req.query.q;
     const r = await fetch(`https://api.mangadex.org/manga?title=${q}&limit=20&includes[]=cover_art`, {
-      headers: { Authorization: `Bearer ${token}`, "User-Agent": USER_AGENT },
+      headers: { Authorization: `Bearer ${token}`, "User-Agent": USER_AGENT, "Connection": "close" },
     });
     res.json(await r.json());
   } catch (e) {
@@ -85,7 +101,7 @@ app.get("/chapters/:mangaId", async (req, res) => {
     const r = await fetch(
       `https://api.mangadex.org/manga/${req.params.mangaId}/feed?translatedLanguage[]=${translatedLang}&order[chapter]=asc&limit=100&offset=${offset}`,
       {
-        headers: { Authorization: `Bearer ${token}`, "User-Agent": USER_AGENT },
+        headers: { Authorization: `Bearer ${token}`, "User-Agent": USER_AGENT, "Connection": "close" },
       }
     );
     res.json(await r.json());
