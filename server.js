@@ -4,6 +4,19 @@ const app = express();
 let token = null;
 
 const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
+const PROXY_URL = "https://api.allorigins.win/raw?url=";
+
+async function proxyFetch(url, options = {}) {
+  const proxyUrl = PROXY_URL + encodeURIComponent(url);
+
+  return fetch(proxyUrl, {
+    ...options,
+    headers: {
+      ...options.headers,
+      "User-Agent": USER_AGENT,
+    },
+  });
+}
 
 async function login() {
   const body = new URLSearchParams({
@@ -14,13 +27,12 @@ async function login() {
     client_secret: process.env.CLIENT_SECRET,
   });
 
-  const res = await fetch(
+  const res = await proxyFetch(
     "https://auth.mangadex.org/realms/mangadex/protocol/openid-connect/token",
     {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": USER_AGENT,
       },
       body: body,
     },
@@ -34,16 +46,16 @@ async function login() {
   }
 
   token = data.access_token;
-  console.log("✓ Token OK");
+  console.log("✓ Token OK via proxy");
 }
 
 app.get("/popular", async (req, res) => {
   try {
     if (!token) await login();
-    const r = await fetch(
+    const r = await proxyFetch(
       `https://api.mangadex.org/manga?limit=24&includes[]=cover_art&order[followedCount]=desc&contentRating[]=safe&contentRating[]=suggestive`,
       {
-        headers: { Authorization: `Bearer ${token}`, "User-Agent": USER_AGENT },
+        headers: { Authorization: `Bearer ${token}` },
       }
     );
     const data = await r.json();
@@ -63,8 +75,8 @@ app.get("/search", async (req, res) => {
   try {
     if (!token) await login();
     const q = req.query.q;
-    const r = await fetch(`https://api.mangadex.org/manga?title=${q}&limit=20&includes[]=cover_art`, {
-      headers: { Authorization: `Bearer ${token}`, "User-Agent": USER_AGENT },
+    const r = await proxyFetch(`https://api.mangadex.org/manga?title=${q}&limit=20&includes[]=cover_art`, {
+      headers: { Authorization: `Bearer ${token}` },
     });
     res.json(await r.json());
   } catch (e) {
@@ -82,10 +94,10 @@ app.get("/chapters/:mangaId", async (req, res) => {
 
     const translatedLang = lang === 'en' ? 'en' : 'pt-br';
 
-    const r = await fetch(
+    const r = await proxyFetch(
       `https://api.mangadex.org/manga/${req.params.mangaId}/feed?translatedLanguage[]=${translatedLang}&order[chapter]=asc&limit=100&offset=${offset}`,
       {
-        headers: { Authorization: `Bearer ${token}`, "User-Agent": USER_AGENT },
+        headers: { Authorization: `Bearer ${token}` },
       }
     );
     res.json(await r.json());
@@ -110,7 +122,7 @@ app.get("/image-proxy", async (req, res) => {
   try {
     const response = await fetch(imageUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+        'User-Agent': USER_AGENT,
         'Referer': 'https://mangadex.org/'
       }
     });
