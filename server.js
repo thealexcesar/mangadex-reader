@@ -3,6 +3,8 @@ const express = require("express");
 const app = express();
 let token = null;
 
+const USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
+
 async function login() {
   const body = new URLSearchParams({
     grant_type: "password",
@@ -18,6 +20,7 @@ async function login() {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded",
+        "User-Agent": USER_AGENT,
       },
       body: body,
     },
@@ -40,7 +43,7 @@ app.get("/popular", async (req, res) => {
     const r = await fetch(
       `https://api.mangadex.org/manga?limit=24&includes[]=cover_art&order[followedCount]=desc&contentRating[]=safe&contentRating[]=suggestive`,
       {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, "User-Agent": USER_AGENT },
       }
     );
     const data = await r.json();
@@ -61,7 +64,7 @@ app.get("/search", async (req, res) => {
     if (!token) await login();
     const q = req.query.q;
     const r = await fetch(`https://api.mangadex.org/manga?title=${q}&limit=20&includes[]=cover_art`, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: { Authorization: `Bearer ${token}`, "User-Agent": USER_AGENT },
     });
     res.json(await r.json());
   } catch (e) {
@@ -82,7 +85,7 @@ app.get("/chapters/:mangaId", async (req, res) => {
     const r = await fetch(
       `https://api.mangadex.org/manga/${req.params.mangaId}/feed?translatedLanguage[]=${translatedLang}&order[chapter]=asc&limit=100&offset=${offset}`,
       {
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}`, "User-Agent": USER_AGENT },
       }
     );
     res.json(await r.json());
