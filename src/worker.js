@@ -112,8 +112,20 @@ async function handleChapters(env, mangaId, url) {
 }
 
 async function handlePages(chapterId) {
-  const r = await fetch(`https://api.mangadex.org/at-home/server/${chapterId}`);
-  return json(await r.json());
+  try {
+    const r = await fetch(`https://api.mangadex.org/at-home/server/${chapterId}`, {
+      headers: { "User-Agent": USER_AGENT },
+    });
+    if (!r.ok) {
+      const text = await r.text();
+      console.error(`Error on /pages: ${r.status} ${text}`);
+      return json({ error: text || "Failed to fetch pages" }, r.status);
+    }
+    return json(await r.json());
+  } catch (e) {
+    console.error("Error on /pages:", e);
+    return json({ error: e.message }, 500);
+  }
 }
 
 async function handleImageProxy(url) {

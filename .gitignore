@@ -30,3 +30,6 @@ dist/
 build/
 
 notes/
+# Cloudflare Wrangler (local cache)
+.wrangler/
+.dev.vars
